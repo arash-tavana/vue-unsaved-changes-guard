@@ -1,3 +1,5 @@
+export {useUnsavedChangesGuard} from './composables/useUnsavedChangesGuard';
+
 export type {
   ConfirmNavigationParams,
   UnsavedChangesGuardTrigger,
