@@ -1,8 +1,8 @@
-export {useUnsavedChangesGuard} from './composables/useUnsavedChangesGuard';
+export { useUnsavedChangesGuard } from './composables/useUnsavedChangesGuard'
 
 export type {
   ConfirmNavigationParams,
   UnsavedChangesGuardTrigger,
   UseUnsavedChangesGuardOptions,
-  UseUnsavedChangesGuardReturn
-} from './types';
+  UseUnsavedChangesGuardReturn,
+} from './types'
