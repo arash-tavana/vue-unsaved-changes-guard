@@ -1,193 +1,273 @@
-import {defineComponent, ref} from 'vue';
-import {mount, type VueWrapper} from '@vue/test-utils';
-import type {RouteLocationNormalized} from 'vue-router';
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import {useUnsavedChangesGuard} from '../composables/useUnsavedChangesGuard';
-import type {
-  UseUnsavedChangesGuardOptions,
-  UseUnsavedChangesGuardReturn
-} from '../types';
+import { defineComponent, nextTick, ref } from 'vue'
+import { mount, type VueWrapper } from '@vue/test-utils'
+import type { RouteLocationNormalized } from 'vue-router'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useUnsavedChangesGuard } from '../composables/useUnsavedChangesGuard'
+import type { UseUnsavedChangesGuardOptions, UseUnsavedChangesGuardReturn } from '../types'
 
 type RouterGuard = (
   to: RouteLocationNormalized,
-  from: RouteLocationNormalized
-) => boolean | Promise<boolean>;
+  from: RouteLocationNormalized,
+) => boolean | Promise<boolean>
 
-type RegisterRouterGuard = (guard: RouterGuard) => void;
+type RegisterRouterGuard = (guard: RouterGuard) => void
 
-type ConfirmNavigation =
-  UseUnsavedChangesGuardOptions['confirmNavigation'];
+type ConfirmNavigation = UseUnsavedChangesGuardOptions['confirmNavigation']
 
 const routerGuards = vi.hoisted(() => ({
   leave: vi.fn<RegisterRouterGuard>(),
-  update: vi.fn<RegisterRouterGuard>()
-}));
+  update: vi.fn<RegisterRouterGuard>(),
+}))
 
 vi.mock('vue-router', () => ({
   onBeforeRouteLeave: routerGuards.leave,
-  onBeforeRouteUpdate: routerGuards.update
-}));
+  onBeforeRouteUpdate: routerGuards.update,
+}))
 
 const to = {
-  name: 'home'
-} as RouteLocationNormalized;
+  name: 'home',
+} as RouteLocationNormalized
 
 const from = {
-  name: 'edit'
-} as RouteLocationNormalized;
+  name: 'edit',
+} as RouteLocationNormalized
 
-let wrapper: VueWrapper | undefined;
+let wrapper: VueWrapper | undefined
 
 const mountGuard = (options: UseUnsavedChangesGuardOptions) => {
-  let guard!: UseUnsavedChangesGuardReturn;
+  let guard!: UseUnsavedChangesGuardReturn
 
   wrapper = mount(
     defineComponent({
       setup() {
-        guard = useUnsavedChangesGuard(options);
+        guard = useUnsavedChangesGuard(options)
 
-        return () => null;
-      }
-    })
-  );
+        return () => null
+      },
+    }),
+  )
 
-  return guard;
-};
+  return guard
+}
 
 const getLeaveGuard = () => {
-  const guard = routerGuards.leave.mock.calls[0]?.[0];
+  const guard = routerGuards.leave.mock.calls[0]?.[0]
 
   if (!guard) {
-    throw new Error('Leave guard was not registered');
+    throw new Error('Leave guard was not registered')
   }
 
-  return guard;
-};
+  return guard
+}
 
 const getUpdateGuard = () => {
-  const guard = routerGuards.update.mock.calls[0]?.[0];
+  const guard = routerGuards.update.mock.calls[0]?.[0]
 
   if (!guard) {
-    throw new Error('Update guard was not registered');
+    throw new Error('Update guard was not registered')
   }
 
-  return guard;
-};
+  return guard
+}
 
 describe('useUnsavedChangesGuard', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   afterEach(() => {
-    wrapper?.unmount();
-    wrapper = undefined;
-  });
+    wrapper?.unmount()
+    wrapper = undefined
+
+    vi.restoreAllMocks()
+  })
 
   it('allows navigation when there are no unsaved changes', async () => {
-    const confirmNavigation = vi.fn<ConfirmNavigation>();
+    const confirmNavigation = vi.fn<ConfirmNavigation>()
 
     mountGuard({
       hasUnsavedChanges: ref(false),
-      confirmNavigation
-    });
+      confirmNavigation,
+    })
 
-    const result = await getLeaveGuard()(to, from);
+    const result = await getLeaveGuard()(to, from)
 
-    expect(result).toBe(true);
-    expect(confirmNavigation).not.toHaveBeenCalled();
-  });
+    expect(result).toBe(true)
+    expect(confirmNavigation).not.toHaveBeenCalled()
+  })
 
   it('uses the confirmation result when there are unsaved changes', async () => {
-    const confirmNavigation =
-      vi.fn<ConfirmNavigation>().mockResolvedValue(false);
+    const confirmNavigation = vi.fn<ConfirmNavigation>().mockResolvedValue(false)
 
     mountGuard({
       hasUnsavedChanges: ref(true),
-      confirmNavigation
-    });
+      confirmNavigation,
+    })
 
-    const result = await getLeaveGuard()(to, from);
+    const result = await getLeaveGuard()(to, from)
 
-    expect(result).toBe(false);
+    expect(result).toBe(false)
     expect(confirmNavigation).toHaveBeenCalledWith({
       trigger: 'route-leave',
       to,
-      from
-    });
-  });
+      from,
+    })
+  })
 
   it('bypasses only the next navigation', async () => {
-    const confirmNavigation =
-      vi.fn<ConfirmNavigation>().mockResolvedValue(false);
+    const confirmNavigation = vi.fn<ConfirmNavigation>().mockResolvedValue(false)
 
     const guard = mountGuard({
       hasUnsavedChanges: ref(true),
-      confirmNavigation
-    });
+      confirmNavigation,
+    })
 
-    const leaveGuard = getLeaveGuard();
+    const leaveGuard = getLeaveGuard()
 
-    guard.bypassNextNavigation();
+    guard.bypassNextNavigation()
 
-    expect(await leaveGuard(to, from)).toBe(true);
-    expect(confirmNavigation).not.toHaveBeenCalled();
+    expect(await leaveGuard(to, from)).toBe(true)
+    expect(confirmNavigation).not.toHaveBeenCalled()
 
-    expect(await leaveGuard(to, from)).toBe(false);
-    expect(confirmNavigation).toHaveBeenCalledOnce();
-  });
+    expect(await leaveGuard(to, from)).toBe(false)
+    expect(confirmNavigation).toHaveBeenCalledOnce()
+  })
 
   it('updates the confirming state', async () => {
-    let resolveConfirmation!: (result: boolean) => void;
+    let resolveConfirmation!: (result: boolean) => void
 
     const confirmNavigation = vi.fn<ConfirmNavigation>(
       () =>
-        new Promise<boolean>(resolve => {
-          resolveConfirmation = resolve;
-        })
-    );
+        new Promise<boolean>((resolve) => {
+          resolveConfirmation = resolve
+        }),
+    )
 
     const guard = mountGuard({
       hasUnsavedChanges: ref(true),
-      confirmNavigation
-    });
+      confirmNavigation,
+    })
 
-    const navigation = getLeaveGuard()(to, from);
+    const navigation = getLeaveGuard()(to, from)
 
-    expect(guard.isConfirming.value).toBe(true);
+    expect(guard.isConfirming.value).toBe(true)
 
-    resolveConfirmation(true);
+    resolveConfirmation(true)
 
-    await expect(navigation).resolves.toBe(true);
-    expect(guard.isConfirming.value).toBe(false);
-  });
+    await expect(navigation).resolves.toBe(true)
+    expect(guard.isConfirming.value).toBe(false)
+  })
 
   it('handles route updates', async () => {
-    const confirmNavigation =
-      vi.fn<ConfirmNavigation>().mockResolvedValue(true);
+    const confirmNavigation = vi.fn<ConfirmNavigation>().mockResolvedValue(true)
 
     mountGuard({
       hasUnsavedChanges: ref(true),
-      confirmNavigation
-    });
+      confirmNavigation,
+    })
 
-    const result = await getUpdateGuard()(to, from);
+    const result = await getUpdateGuard()(to, from)
 
-    expect(result).toBe(true);
+    expect(result).toBe(true)
     expect(confirmNavigation).toHaveBeenCalledWith({
       trigger: 'route-update',
       to,
-      from
-    });
-  });
+      from,
+    })
+  })
 
   it('does not register the route update guard when it is disabled', () => {
     mountGuard({
       hasUnsavedChanges: ref(true),
       confirmNavigation: vi.fn<ConfirmNavigation>(),
-      guardRouteUpdates: false
-    });
+      guardRouteUpdates: false,
+    })
 
-    expect(routerGuards.update).not.toHaveBeenCalled();
-  });
-});
+    expect(routerGuards.update).not.toHaveBeenCalled()
+  })
+  it('adds the beforeunload listener when there are unsaved changes', () => {
+    const addEventListener = vi.spyOn(window, 'addEventListener')
+
+    mountGuard({
+      hasUnsavedChanges: ref(true),
+      confirmNavigation: vi.fn<ConfirmNavigation>(),
+    })
+
+    expect(addEventListener).toHaveBeenCalledWith('beforeunload', expect.any(Function))
+  })
+
+  it('adds the beforeunload listener after the form becomes dirty', async () => {
+    const hasUnsavedChanges = ref(false)
+    const addEventListener = vi.spyOn(window, 'addEventListener')
+
+    mountGuard({
+      hasUnsavedChanges,
+      confirmNavigation: vi.fn<ConfirmNavigation>(),
+    })
+
+    expect(addEventListener).not.toHaveBeenCalledWith('beforeunload', expect.any(Function))
+
+    hasUnsavedChanges.value = true
+
+    await nextTick()
+
+    expect(addEventListener).toHaveBeenCalledWith('beforeunload', expect.any(Function))
+  })
+
+  it('removes the beforeunload listener after changes are saved', async () => {
+    const hasUnsavedChanges = ref(true)
+    const removeEventListener = vi.spyOn(window, 'removeEventListener')
+
+    mountGuard({
+      hasUnsavedChanges,
+      confirmNavigation: vi.fn<ConfirmNavigation>(),
+    })
+
+    hasUnsavedChanges.value = false
+
+    await nextTick()
+
+    expect(removeEventListener).toHaveBeenCalledWith('beforeunload', expect.any(Function))
+  })
+
+  it('prevents browser unload when there are unsaved changes', () => {
+    mountGuard({
+      hasUnsavedChanges: ref(true),
+      confirmNavigation: vi.fn<ConfirmNavigation>(),
+    })
+
+    const event = new Event('beforeunload', {
+      cancelable: true,
+    })
+
+    window.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('does not register beforeunload when it is disabled', () => {
+    const addEventListener = vi.spyOn(window, 'addEventListener')
+
+    mountGuard({
+      hasUnsavedChanges: ref(true),
+      confirmNavigation: vi.fn<ConfirmNavigation>(),
+      guardBeforeUnload: false,
+    })
+
+    expect(addEventListener).not.toHaveBeenCalledWith('beforeunload', expect.any(Function))
+  })
+
+  it('removes the beforeunload listener when the component unmounts', () => {
+    const removeEventListener = vi.spyOn(window, 'removeEventListener')
+
+    mountGuard({
+      hasUnsavedChanges: ref(true),
+      confirmNavigation: vi.fn<ConfirmNavigation>(),
+    })
+
+    wrapper?.unmount()
+    wrapper = undefined
+
+    expect(removeEventListener).toHaveBeenCalledWith('beforeunload', expect.any(Function))
+  })
+})
