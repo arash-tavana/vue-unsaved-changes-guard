@@ -1,13 +1,28 @@
 {
   "name": "vue-unsaved-changes-guard",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
+  "description": "A flexible, UI-agnostic unsaved changes guard for Vue 3 and Vue Router.",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "test:unit": "vitest",
+    "dev": "vite",
+    "build": "run-p type-check \"build-only {@}\" --",
+    "build:lib": "vite build && vue-tsc -p tsconfig.lib.json",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "run-s \"lint:*\"",
@@ -15,9 +30,9 @@
     "lint:eslint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/"
   },
-  "dependencies": {
-    "vue": "^3.5.38",
-    "vue-router": "^5.1.0"
+  "peerDependencies": {
+    "vue": "^3.3.0",
+    "vue-router": "^4.0.0 || ^5.0.0"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",
@@ -41,7 +56,9 @@
     "vite": "^8.0.16",
     "vite-plugin-vue-devtools": "^8.1.2",
     "vitest": "^4.1.9",
+    "vue": "^3.5.40",
     "vue-eslint-parser": "^10.4.1",
+    "vue-router": "^5.2.0",
     "vue-tsc": "^3.3.5"
   },
   "engines": {
