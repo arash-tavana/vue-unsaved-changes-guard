@@ -1,54 +1,82 @@
 # vue-unsaved-changes-guard
 
-This template should help get you started developing with Vue 3 in Vite.
+A small Vue 3 composable that warns users before leaving a page with unsaved changes.
 
-## Recommended IDE Setup
+It supports both browser refresh/close events and Vue Router navigation.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Installation
 
-## Recommended Browser Setup
-
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
+```bash
+npm install vue-unsaved-changes-guard
 ```
 
-### Compile and Hot-Reload for Development
+## Requirements
 
-```sh
-npm run dev
+- Vue 3.5+
+- Vue Router 5+
+
+## Usage
+
+```ts
+import { ref } from 'vue'
+import { useUnsavedChangesGuard } from 'vue-unsaved-changes-guard'
+
+const isDirty = ref(false)
+
+useUnsavedChangesGuard({
+  isDirty,
+})
 ```
 
-### Type-Check, Compile and Minify for Production
+## Options
 
-```sh
-npm run build
+```ts
+useUnsavedChangesGuard({
+  isDirty,
+  message,
+  confirmLeave,
+})
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+| Option         | Type                                | Required | Description                                  |
+|----------------|-------------------------------------|----------|----------------------------------------------|
+| `isDirty`      | `Ref<boolean>`                      | ✅        | Indicates whether there are unsaved changes. |
+| `message`      | `string`                            | ❌        | Custom confirmation message.                 |
+| `confirmLeave` | `() => boolean \| Promise<boolean>` | ❌        | Custom confirmation handler.                 |
 
-```sh
-npm run test:unit
+## Default behavior
+
+If `confirmLeave` is not provided, the browser confirmation dialog is used.
+
+```ts
+useUnsavedChangesGuard({
+  isDirty,
+})
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## Custom confirmation
 
-```sh
-npm run lint
+```ts
+useUnsavedChangesGuard({
+  isDirty,
+  confirmLeave: async () => {
+    return await showConfirmationModal()
+  },
+})
 ```
+
+## API
+
+The composable returns a single function.
+
+```ts
+const { canLeave } = useUnsavedChangesGuard(...)
+```
+
+| Property   | Type                     |
+|------------|--------------------------|
+| `canLeave` | `() => Promise<boolean>` |
+
+## License
+
+MIT
