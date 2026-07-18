@@ -34,11 +34,15 @@ const TestComponent = defineComponent({
   template: '<div />',
 })
 
-const createWrapper = (
-  isDirty: boolean,
-  message?: string,
-  confirmLeave?: () => boolean | Promise<boolean>,
-) => {
+const createWrapper = ({
+  isDirty,
+  message,
+  confirmLeave,
+}: {
+  isDirty: boolean
+  message?: string
+  confirmLeave?: () => boolean | Promise<boolean>
+}) => {
   return mount(TestComponent, {
     props: {
       isDirty,
@@ -52,7 +56,7 @@ describe('useUnsavedChangesGuard', () => {
   it('allows leaving when there are no unsaved changes', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm')
 
-    const wrapper = createWrapper(false)
+    const wrapper = createWrapper({ isDirty: false })
     const result = await wrapper.vm.canLeave()
 
     expect(result).toBe(true)
@@ -65,7 +69,7 @@ describe('useUnsavedChangesGuard', () => {
   it('prevents leaving when the user cancels the confirmation', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
 
-    const wrapper = createWrapper(true)
+    const wrapper = createWrapper({ isDirty: true })
     const result = await wrapper.vm.canLeave()
 
     expect(result).toBe(false)
@@ -78,7 +82,7 @@ describe('useUnsavedChangesGuard', () => {
   it('allows leaving when the user confirms leaving', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
-    const wrapper = createWrapper(true)
+    const wrapper = createWrapper({ isDirty: true })
     const result = await wrapper.vm.canLeave()
 
     expect(result).toBe(true)
@@ -91,7 +95,7 @@ describe('useUnsavedChangesGuard', () => {
   it('uses the custom confirmation message', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
-    const wrapper = createWrapper(true, 'You have unsaved changes')
+    const wrapper = createWrapper({ isDirty: true, message: 'You have unsaved changes' })
     await wrapper.vm.canLeave()
 
     expect(confirmSpy).toHaveBeenCalledWith('You have unsaved changes')
@@ -103,7 +107,7 @@ describe('useUnsavedChangesGuard', () => {
   it('uses the custom confirmLeave function', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm')
     const confirmLeave = vi.fn().mockReturnValue(true)
-    const wrapper = createWrapper(true, undefined, confirmLeave)
+    const wrapper = createWrapper({ isDirty: true, confirmLeave })
     const result = await wrapper.vm.canLeave()
 
     expect(result).toBe(true)
@@ -118,7 +122,7 @@ describe('useUnsavedChangesGuard', () => {
     const confirmSpy = vi.spyOn(window, 'confirm')
     const confirmLeave = vi.fn().mockReturnValue(false)
 
-    const wrapper = createWrapper(true, undefined, confirmLeave)
+    const wrapper = createWrapper({ isDirty: true, confirmLeave })
     const result = await wrapper.vm.canLeave()
 
     expect(result).toBe(false)
@@ -133,7 +137,7 @@ describe('useUnsavedChangesGuard', () => {
     const confirmSpy = vi.spyOn(window, 'confirm')
     const confirmLeave = vi.fn().mockResolvedValue(true)
 
-    const wrapper = createWrapper(true, undefined, confirmLeave)
+    const wrapper = createWrapper({ isDirty: true, confirmLeave })
     const result = await wrapper.vm.canLeave()
 
     expect(result).toBe(true)
@@ -148,7 +152,7 @@ describe('useUnsavedChangesGuard', () => {
     const confirmSpy = vi.spyOn(window, 'confirm')
     const confirmLeave = vi.fn().mockResolvedValue(false)
 
-    const wrapper = createWrapper(true, undefined, confirmLeave)
+    const wrapper = createWrapper({ isDirty: true, confirmLeave })
     const result = await wrapper.vm.canLeave()
 
     expect(result).toBe(false)
