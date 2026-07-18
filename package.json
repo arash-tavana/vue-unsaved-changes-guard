@@ -1,6 +1,6 @@
 {
   "name": "vue-unsaved-changes-guard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "type": "module",
   "main": "./dist/vue-unsaved-changes-guard.umd.cjs",
