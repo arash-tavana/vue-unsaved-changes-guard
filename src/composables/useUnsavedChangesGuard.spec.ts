@@ -162,4 +162,65 @@ describe('useUnsavedChangesGuard', () => {
     confirmSpy.mockRestore()
     wrapper.unmount()
   })
+
+  it('does not prevent page unload when there are no unsaved changes', () => {
+    const wrapper = createWrapper({
+      isDirty: false,
+    })
+
+    const event = new Event('beforeunload', {
+      cancelable: true,
+    })
+
+    const preventDefaultSpy = vi.spyOn(event, 'preventDefault')
+
+    window.dispatchEvent(event)
+
+    expect(preventDefaultSpy).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(false)
+
+    preventDefaultSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('prevents page unload when there are unsaved changes', () => {
+    const wrapper = createWrapper({
+      isDirty: true,
+    })
+
+    const event = new Event('beforeunload', {
+      cancelable: true,
+    })
+
+    const preventDefaultSpy = vi.spyOn(event, 'preventDefault')
+
+    window.dispatchEvent(event)
+
+    expect(preventDefaultSpy).toHaveBeenCalledOnce()
+    expect(event.defaultPrevented).toBe(true)
+
+    preventDefaultSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('removes the beforeunload listener when the component unmounts', () => {
+    const wrapper = createWrapper({
+      isDirty: true,
+    })
+
+    wrapper.unmount()
+
+    const event = new Event('beforeunload', {
+      cancelable: true,
+    })
+
+    const preventDefaultSpy = vi.spyOn(event, 'preventDefault')
+
+    window.dispatchEvent(event)
+
+    expect(preventDefaultSpy).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(false)
+
+    preventDefaultSpy.mockRestore()
+  })
 })
