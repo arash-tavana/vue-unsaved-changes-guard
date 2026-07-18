@@ -1,10 +1,26 @@
 # vue-unsaved-changes-guard
 
 [![CI](https://github.com/arash-tavana/vue-unsaved-changes-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/arash-tavana/vue-unsaved-changes-guard/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/vue-unsaved-changes-guard.svg)](https://www.npmjs.com/package/vue-unsaved-changes-guard)
+[![license](https://img.shields.io/npm/l/vue-unsaved-changes-guard.svg)](./LICENSE)
 
-A small Vue 3 composable that warns users before leaving a page with unsaved changes.
+A lightweight Vue 3 composable for preventing users from accidentally leaving a page with unsaved changes.
 
-It supports both browser refresh/close events and Vue Router navigation.
+It handles both:
+
+- browser refresh, tab close, and page unload
+- navigation between routes with Vue Router
+
+You can use the browser's default confirmation dialog or provide your own synchronous or asynchronous confirmation
+handler.
+
+## Features
+
+- Prevents accidental navigation when there are unsaved changes
+- Supports Vue Router navigation
+- Handles browser refresh, tab close, and page unload
+- Supports custom synchronous and asynchronous confirmation handlers
+- Fully typed with TypeScript
 
 ## Installation
 
@@ -14,8 +30,8 @@ npm install vue-unsaved-changes-guard
 
 ## Requirements
 
-- Vue 3.5+
-- Vue Router 5+
+- Vue 3.5 or later
+- Vue Router 4 or later
 
 ## Usage
 
@@ -25,9 +41,17 @@ import { useUnsavedChangesGuard } from 'vue-unsaved-changes-guard'
 
 const isDirty = ref(false)
 
-useUnsavedChangesGuard({
-  isDirty,
-})
+useUnsavedChangesGuard({ isDirty })
+
+function onInput() {
+  isDirty.value = true
+}
+
+async function saveForm() {
+  // Save data...
+
+  isDirty.value = false
+}
 ```
 
 ## Options
@@ -69,16 +93,30 @@ useUnsavedChangesGuard({
 
 ## API
 
-The composable returns a single function.
+The composable returns the following API:
 
-```ts
-const { canLeave } = useUnsavedChangesGuard(...)
-```
+| Property   | Type                     | Description                                                          |
+|------------|--------------------------|----------------------------------------------------------------------|
+| `canLeave` | `() => Promise<boolean>` | Resolves to `true` when navigation is allowed and `false` otherwise. |
 
-| Property   | Type                     |
-|------------|--------------------------|
-| `canLeave` | `() => Promise<boolean>` |
+## Browser behavior
+
+When users refresh the page, close the browser tab, or leave the site, modern browsers ignore custom messages shown by
+`beforeunload`.
+
+In these cases, the browser displays its own confirmation dialog.
+
+This is a browser security restriction and cannot be overridden by this library.
+
+## Limitations
+
+- The `beforeunload` event always uses the browser's native confirmation dialog.
+- Custom confirmation handlers are only used for Vue Router navigation.
+
+## Contributing
+
+Contributions, issues, and feature requests are welcome.
 
 ## License
 
-MIT
+This project is licensed under the MIT License.
