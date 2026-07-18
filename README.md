@@ -1,5 +1,7 @@
 # vue-unsaved-changes-guard
 
+[![CI](https://github.com/arash-tavana/vue-unsaved-changes-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/arash-tavana/vue-unsaved-changes-guard/actions/workflows/ci.yml)
+
 A small Vue 3 composable that warns users before leaving a page with unsaved changes.
 
 It supports both browser refresh/close events and Vue Router navigation.
