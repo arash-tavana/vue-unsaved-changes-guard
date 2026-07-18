@@ -1,7 +1,8 @@
 import { defineComponent, toRef, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useUnsavedChangesGuard } from './useUnsavedChangesGuard'
+import { onBeforeRouteLeave } from 'vue-router'
 
 vi.mock('vue-router', () => ({
   onBeforeRouteLeave: vi.fn(),
@@ -53,6 +54,38 @@ const createWrapper = ({
 }
 
 describe('useUnsavedChangesGuard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('registers a route leave guard', () => {
+    const wrapper = createWrapper({
+      isDirty: true,
+    })
+
+    expect(onBeforeRouteLeave).toHaveBeenCalledOnce()
+    expect(onBeforeRouteLeave).toHaveBeenCalledWith(wrapper.vm.canLeave)
+
+    wrapper.unmount()
+  })
+
+  it('uses the default confirmation message', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    const wrapper = createWrapper({
+      isDirty: true,
+    })
+
+    await wrapper.vm.canLeave()
+
+    expect(confirmSpy).toHaveBeenCalledWith(
+      'You have unsaved changes. Are you sure you want to leave?',
+    )
+
+    confirmSpy.mockRestore()
+    wrapper.unmount()
+  })
+
   it('allows leaving when there are no unsaved changes', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm')
 
