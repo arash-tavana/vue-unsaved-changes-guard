@@ -1,4 +1,4 @@
-import { defineComponent, toRef } from 'vue'
+import { defineComponent, toRef, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { useUnsavedChangesGuard } from './useUnsavedChangesGuard'
@@ -15,7 +15,11 @@ const TestComponent = defineComponent({
     },
     message: {
       type: String,
-      default: '',
+      required: false,
+    },
+    confirmLeave: {
+      type: Function as PropType<() => boolean | Promise<boolean>>,
+      required: false,
     },
   },
 
@@ -23,17 +27,23 @@ const TestComponent = defineComponent({
     return useUnsavedChangesGuard({
       isDirty: toRef(props, 'isDirty'),
       message: props.message,
+      confirmLeave: props.confirmLeave,
     })
   },
 
   template: '<div />',
 })
 
-const createWrapper = (isDirty: boolean, message?: string) => {
+const createWrapper = (
+  isDirty: boolean,
+  message?: string,
+  confirmLeave?: () => boolean | Promise<boolean>,
+) => {
   return mount(TestComponent, {
     props: {
       isDirty,
       message,
+      confirmLeave,
     },
   })
 }
@@ -85,6 +95,65 @@ describe('useUnsavedChangesGuard', () => {
     await wrapper.vm.canLeave()
 
     expect(confirmSpy).toHaveBeenCalledWith('You have unsaved changes')
+
+    confirmSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('uses the custom confirmLeave function', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm')
+    const confirmLeave = vi.fn().mockReturnValue(true)
+    const wrapper = createWrapper(true, undefined, confirmLeave)
+    const result = await wrapper.vm.canLeave()
+
+    expect(result).toBe(true)
+    expect(confirmLeave).toHaveBeenCalledOnce()
+    expect(confirmSpy).not.toHaveBeenCalled()
+
+    confirmSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('prevents leaving when the custom confirmLeave function returns false', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm')
+    const confirmLeave = vi.fn().mockReturnValue(false)
+
+    const wrapper = createWrapper(true, undefined, confirmLeave)
+    const result = await wrapper.vm.canLeave()
+
+    expect(result).toBe(false)
+    expect(confirmLeave).toHaveBeenCalledOnce()
+    expect(confirmSpy).not.toHaveBeenCalled()
+
+    confirmSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('allows leaving when the async confirmLeave function resolves true', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm')
+    const confirmLeave = vi.fn().mockResolvedValue(true)
+
+    const wrapper = createWrapper(true, undefined, confirmLeave)
+    const result = await wrapper.vm.canLeave()
+
+    expect(result).toBe(true)
+    expect(confirmLeave).toHaveBeenCalledOnce()
+    expect(confirmSpy).not.toHaveBeenCalled()
+
+    confirmSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('prevents leaving when the async confirmLeave function resolves false', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm')
+    const confirmLeave = vi.fn().mockResolvedValue(false)
+
+    const wrapper = createWrapper(true, undefined, confirmLeave)
+    const result = await wrapper.vm.canLeave()
+
+    expect(result).toBe(false)
+    expect(confirmLeave).toHaveBeenCalledOnce()
+    expect(confirmSpy).not.toHaveBeenCalled()
 
     confirmSpy.mockRestore()
     wrapper.unmount()
