@@ -16,6 +16,9 @@ export default defineConfig({
   ],
 
   build: {
+    emptyOutDir: true,
+    copyPublicDir: false,
+
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'VueUnsavedChangesGuard',
